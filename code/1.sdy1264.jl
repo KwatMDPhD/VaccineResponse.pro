@@ -12,20 +12,19 @@ validate = (true, true)
 
 # --------------------------------------------- #
 
-pa_x_io_x_an = read(ind, "gene_expression_files_2023-03-12_12-02-58.tsv")
+pe_x_io_x_an = read(ind, "gene_expression_files_2023-03-12_12-02-58.tsv")
 
-sort!(pa_x_io_x_an, [1, 3])
+sort!(pe_x_io_x_an, [1, 3])
 
-sa_pat__ = [sa => "$pa.$(Int(ti))" for (pa, sa, ti) in eachrow(pa_x_io_x_an)]
+sapet_ = [sa => "$pe.$(Int(ti))" for (pe, sa, ti) in eachrow(pe_x_io_x_an)]
 
-pat_ = (sa_pat[2] for sa_pat in sa_pat__)
+pet_ = (sapet[2] for sapet in sapet_)
 
-@test length(unique(sa_pat[1] for sa_pat in sa_pat__)) == length(unique(pat_))
-
+@test length(unique(sapet[1] for sapet in sapet_)) == length(unique(pet_))
 
 # --------------------------------------------- #
 
-pa_x_io_x_an = outerjoin(
+pe_x_io_x_an = outerjoin(
     read(ind, "demographics_2023-03-12_11-08-48.tsv"),
     read(ind, "cohort_membership_2023-03-12_11-06-40.tsv"),
     read(ind, "neut_ab_titer_2023-03-12_11-06-06.tsv");
@@ -33,23 +32,25 @@ pa_x_io_x_an = outerjoin(
     validate,
 )
 
-rename!(pa_x_io_x_an, "Value Preferred" => "Antibody Titer")
+rename!(pe_x_io_x_an, "Value Preferred" => "Antibody Titer")
 
 # --------------------------------------------- #
 
-io_x_sa_x_an = DataFrame("Information" => names(pa_x_io_x_an))
+io_x_sa_x_an = DataFrame("Information" => names(pe_x_io_x_an))
 
-pa_id = Dict(pa => id for (id, pa) in enumerate(pa_x_io_x_an[!, 1]))
+pe_id = Dict(pe => id for (id, pe) in enumerate(pe_x_io_x_an[!, 1]))
 
-for pat in pat_
+for pet in pet_
 
-    pa = join(split(pat, '.')[1:2], '.')
+    pe = join(split(pet, '.')[1:2], '.')
 
-    id = pa_id[pa]
+    id = pe_id[pe]
 
-    io_x_sa_x_an[!, pat] = collect(pa_x_io_x_an[id, :])
+    io_x_sa_x_an[!, pet] = collect(pe_x_io_x_an[id, :])
 
 end
+
+sa_ = names(io_x_sa_x_an)[2:end]
 
 # --------------------------------------------- #
 
@@ -64,9 +65,11 @@ fe_x_sa_x_nu = outerjoin(
     validate,
 )
 
-rename!(fe_x_sa_x_nu, sa_pat__...)
+rename!(fe_x_sa_x_nu, sapet_...)
 
-@test names(io_x_sa_x_an)[2:end] == names(fe_x_sa_x_nu)[2:end]
+@test sa_ == names(fe_x_sa_x_nu)[2:end]
+
+# --------------------------------------------- #
 
 fe_ge = BioLab.DataFrame.map_to(
     read(ind, "FeatureAnnotation_2023-03-12_11-04-20.tsv"),
@@ -77,11 +80,11 @@ fe_ge = BioLab.DataFrame.map_to(
 
 fe_ = fe_x_sa_x_nu[!, 1]
 
-fe_ = BioLab.Gene.rename(fe_, fe_ge)[1]
+fe2_ = BioLab.Gene.rename(fe_, fe_ge)[1]
 
-fe_ = BioLab.Gene.rename(fe_, BioLab.Gene.map_ensembl(), BioLab.Gene.map_hgnc())[1]
+fe3_ = BioLab.Gene.rename(fe2_, BioLab.Gene.map_ensembl(), BioLab.Gene.map_hgnc())[1]
 
-fe_x_sa_x_nu[!, 1] = fe_
+fe_x_sa_x_nu[!, 1] = fe3_
 
 nar = "Gene"
 
@@ -99,11 +102,43 @@ BioLab.Table.write(ts, fe_x_sa_x_nuc)
 
 # --------------------------------------------- #
 
+ti_ = [parse(Int, BioLab.String.split_and_get(sa, '.', 3)) for sa in sa_]
+
+# --------------------------------------------- #
+
 BioLab.Plot.plot_heat_map(
     fe_x_sa_x_nuc;
     nar,
     nac = "Sample",
-    grc_ = collect(io_x_sa_x_an[4, 2:end]),
+    grc_ = ti_,
     layout = Dict("title" => Dict("text" => da)),
     ht = BioLab.Path.replace_extension(ts, "html"),
 )
+
+# --------------------------------------------- #
+
+for ti in sort(unique(ti_))
+
+    id_ = findall(ti2 == ti for ti2 in ti_)
+
+    idd_ = vcat(1, [id + 1 for id in id_])
+
+    io_x_sat_x_an = io_x_sa_x_an[:, idd_]
+
+    fe_x_sat_x_nuc = fe_x_sa_x_nuc[:, idd_]
+
+    BioLab.Table.write(joinpath(ou, "information_x_sample$(ti)_x_anything.tsv"), io_x_sat_x_an)
+
+    ts = joinpath(ou, "gene_x_sample$(ti)_x_numbercollapsed.tsv")
+
+    BioLab.Table.write(ts, fe_x_sat_x_nuc)
+
+    BioLab.Plot.plot_heat_map(
+        fe_x_sat_x_nuc;
+        nar,
+        nac = "Sample",
+        layout = Dict("title" => Dict("text" => "$da 🗓️ $ti")),
+        ht = BioLab.Path.replace_extension(ts, "html"),
+    )
+
+end
