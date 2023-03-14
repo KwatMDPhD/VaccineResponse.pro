@@ -35,6 +35,8 @@ pe_x_de_x_an = read(ind, "demographics.tsv")
 
 pe_x_ig_x_an = read(ind, "neut_ab_titer.tsv")
 
+rename!(pe_x_ig_x_an, "Value Preferred" => "Antibody Titer")
+
 pe_x_ig_x_an = subset(groupby(pe_x_ig_x_an, nap), nat => ti_ -> ti_ .== maximum(ti_))
 
 pe_x_io_x_an = outerjoin(pe_x_de_x_an, pe_x_ig_x_an; on = nap, validate)

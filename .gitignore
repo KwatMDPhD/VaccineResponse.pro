@@ -27,7 +27,6 @@ docs/site/
 
 .ipynb_checkpoints/
 
-
 output/*
 
 !**/.keep
