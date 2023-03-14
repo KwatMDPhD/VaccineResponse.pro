@@ -2,7 +2,7 @@ include("_.jl")
 
 # --------------------------------------------- #
 
-da = "SDY1264"
+da = "SDY67"
 
 ind = joinpath(IN, da)
 
@@ -59,25 +59,9 @@ BioLab.Table.write(joinpath(ou, "information_x_sample_x_anything.tsv"), io_x_sa_
 
 # --------------------------------------------- #
 
-fe_x_sa_x_nu = outerjoin(
-    read(ind, "SDY1264_PBMC_Trial1_Geo.tsv"),
-    read(ind, "SDY1264_PBMC_Trial2_Geo.tsv");
-    on = "feature_id",
-    validate,
-)
+fe_x_sa_x_nu = read(ind, "SDY67_PBMC_HealthyAdults.tsv")
 
 select!(rename!(fe_x_sa_x_nu, sapet_), 1, pet_...)
-
-# --------------------------------------------- #
-
-fe_ge = BioLab.DataFrame.map_to(
-    read(ind, "FeatureAnnotation.tsv"),
-    BioLab.Dict.set_with_last!,
-    ["Feature Id"],
-    "Gene Symbol",
-)
-
-fe_x_sa_x_nu[!, 1] = BioLab.Gene.rename(fe_x_sa_x_nu[!, 1], fe_ge)[1]
 
 # --------------------------------------------- #
 
