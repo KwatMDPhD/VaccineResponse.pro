@@ -1,3 +1,0 @@
-module VaccineResponse
-
-end
